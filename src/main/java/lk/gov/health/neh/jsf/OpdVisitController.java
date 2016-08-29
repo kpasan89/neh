@@ -25,12 +25,14 @@ import javax.faces.convert.FacesConverter;
 import javax.persistence.TemporalType;
 import lk.gov.health.neh.entity.ClosedUnit;
 import lk.gov.health.neh.entity.Patient;
+import lk.gov.health.neh.entity.SerialNumber;
 import lk.gov.health.neh.entity.Unit;
 import lk.gov.health.neh.entity.Ward;
 import lk.gov.health.neh.enums.ConsultantRole;
 import lk.gov.health.neh.enums.EncounterType;
 import lk.gov.health.neh.session.ClosedUnitFacade;
 import lk.gov.health.neh.session.EncounterFacade;
+import lk.gov.health.neh.session.SerialNumberFacade;
 import lk.gov.health.neh.session.UnitFacade;
 
 @ManagedBean(name = "opdVisitController")
@@ -267,7 +269,7 @@ public class OpdVisitController implements Serializable {
 
     private OpdVisitFacade getFacade() {
         return ejbFacade;
-    }
+   }
 
     public OpdVisit prepareCreate() {
         selected = new OpdVisit();
@@ -280,7 +282,7 @@ public class OpdVisitController implements Serializable {
         Patient pt = new Patient();
         selected.setPatient(pt);
         selected.setIntSerialNo(annualCount().intValue());
-        selected.setSerialNo(stringConversionOfSerialNo(selected.getIntSerialNo()));
+        selected.setSerialNo(stringConversionOfSerialNo());
         selected.setEncounterType(EncounterType.OpdVisit);
         selected.setEncounterDate(new Date());
         selected.setUnit(nextOpdUnit(EncounterType.OpdVisit, new Date(), ConsultantRole.OPD));
@@ -541,7 +543,7 @@ public class OpdVisitController implements Serializable {
         Patient pt = new Patient();
         selected.setPatient(pt);
         selected.setIntSerialNo(annualCount().intValue());
-        selected.setSerialNo(stringConversionOfSerialNo(selected.getIntSerialNo()));
+        selected.setSerialNo(stringConversionOfSerialNo());
         selected.setIntDailyNo(todaysCasualtyCount().intValue());
         selected.setDailyNo(stringConversionOfDailyNo(selected.getIntDailyNo()));
         selected.setEncounterDate(new Date());
@@ -556,7 +558,7 @@ public class OpdVisitController implements Serializable {
         Patient pt = new Patient();
         selected.setPatient(pt);
         selected.setIntSerialNo(annualCount().intValue());
-        selected.setSerialNo(stringConversionOfSerialNo(selected.getIntSerialNo()));
+        selected.setSerialNo(stringConversionOfSerialNo());
         selected.setEncounterDate(new Date());
         selected.setEncounterType(EncounterType.SpecialUnitVisit);
         initializeEmbeddableKey();
@@ -569,7 +571,7 @@ public class OpdVisitController implements Serializable {
         Patient pt = new Patient();
         selected.setPatient(pt);
         selected.setIntSerialNo(annualCount().intValue());
-        selected.setSerialNo(stringConversionOfSerialNo(selected.getIntSerialNo()));
+        selected.setSerialNo(stringConversionOfSerialNo());
 
         selected.setEncounterType(EncounterType.CloseUnitVisit);
         selected.setEncounterDate(new Date());
@@ -577,12 +579,23 @@ public class OpdVisitController implements Serializable {
         return "/opdVisit/close_unit_visit";
     }
 
-    public String stringConversionOfSerialNo(int sn) {
-        int snt = sn + 30670; //30689 because neh next sereal number is 30688 bt they tested 18 bills then (30688-18+1)
+    public String stringConversionOfSerialNo() {
+        findSerialNumber();
+        int snum = (int) getCurrentSerialNumber().getSerialNumber();
         Calendar c = Calendar.getInstance();
-        return snt + "/" + c.get(Calendar.YEAR);
+        return snum + "/" + c.get(Calendar.YEAR);
+//        int snt = sn + 30670; //30689 because neh next sereal number is 30688 bt they tested 18 bills then (30688-18+1)
+//        Calendar c = Calendar.getInstance();
+//        return snt + "/" + c.get(Calendar.YEAR);
     }
 
+    public void findSerialNumber() {
+        String j;
+        j = "select sn from SerialNumber sn Where sn.retired=false order by sn.id desc";
+        currentSerialNumber = getSerialNumberFacade().findFirstBySQL(j);
+        System.out.println("currentSerialNumber = " + currentSerialNumber);
+    }
+    
     public String stringConversionOfDailyNo(int sn) {
         int snt = sn + 1;
         return todaysClosedUnit.getClosedUnit().getCode() + " " + snt;
@@ -756,8 +769,9 @@ public class OpdVisitController implements Serializable {
         }
         if (selected.getId() == null) {
             selected.setIntSerialNo(annualCount().intValue());
-            selected.setSerialNo(stringConversionOfSerialNo(selected.getIntSerialNo()));
+            selected.setSerialNo(stringConversionOfSerialNo());
             updateDailyNo();
+            incrementSerialNumber();
             getFacade().create(selected);
             System.out.println("Create");
             JsfUtil.addSuccessMessage("Registered");
@@ -771,6 +785,14 @@ public class OpdVisitController implements Serializable {
         }
         return "";
     }
+    
+    public void incrementSerialNumber(){
+        int snum = (int) getCurrentSerialNumber().getSerialNumber();
+        snum++;
+        currentSerialNumber.setSerialNumber(snum);
+        currentSerialNumber.setRetired(false);
+        getSerialNumberFacade().edit(currentSerialNumber);
+    }
 
     public List<ClosedUnit> getFindTodayCasualtyUnit() {
         String j;
@@ -781,6 +803,26 @@ public class OpdVisitController implements Serializable {
         System.out.println("j = " + j);
         List<ClosedUnit> c = getClosedUnitFacade().findBySQL(j, m);
         return c;
+    }
+    
+    SerialNumber currentSerialNumber;
+    @EJB
+    SerialNumberFacade serialNumberFacade;
+
+    public SerialNumber getCurrentSerialNumber() {
+        return currentSerialNumber;
+    }
+
+    public void setCurrentSerialNumber(SerialNumber currentSerialNumber) {
+        this.currentSerialNumber = currentSerialNumber;
+    }
+
+    public SerialNumberFacade getSerialNumberFacade() {
+        return serialNumberFacade;
+    }
+
+    public void setSerialNumberFacade(SerialNumberFacade serialNumberFacade) {
+        this.serialNumberFacade = serialNumberFacade;
     }
 
     public ClosedUnitFacade getClosedUnitFacade() {

@@ -14,7 +14,7 @@ import org.jasypt.util.password.StrongPasswordEncryptor;
 
 /**
  *
- * @author buddhika
+ * @author Madhuka
  */
 @ManagedBean
 @SessionScoped

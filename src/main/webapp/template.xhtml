@@ -34,9 +34,10 @@
 
                                 <tr >
                                     <td>
-
+                                        <p:graphicImage library="images" name="header.png" ></p:graphicImage>
                                         <h:form id="menuForm">
-                                            <p:menubar  >
+
+                                            <p:menubar id="menu">
                                                 <p:menuitem value="#{bundle.Home}" outcome="/index" icon="ui-icon-home"/>
                                                 <p:submenu label="Patients">
                                                     <p:menuitem ajax="false" value="OPD Visit" action="#{opdVisitController.addNewOpdVisit()}"/>
@@ -62,9 +63,11 @@
                                                     <p:menuitem value="Patient" outcome="/patient/List.xhtml" />
                                                     <p:menuitem value="Person" outcome="/person/List.xhtml" />
                                                     <p:menuitem value="Staff" outcome="/staff/List.xhtml" />
+                                                    <p:menuitem ajax="false" value="Set Serial Number" action="#{serialNumberController.findSerialNumber()}"/>
                                                 </p:submenu>
                                                 <p:menuitem ajax="false" value="Admission" action="/admission/admission_sheet"/>
                                             </p:menubar>
+                                            <p:sticky target="menu" />
                                         </h:form>
                                     </td>
                                 </tr>
@@ -143,10 +146,10 @@
                         <ui:insert name="footer">
                             <h:form >
                                 <p:commandLink rendered="#{staffController.logged}"
-                                    value="You are logged as #{staffController.loggedStaff.userName}. Logout" action="#{staffController.logout()}" ajax="false" ></p:commandLink>
+                                               value="You are logged as #{staffController.loggedStaff.userName}. Logout" action="#{staffController.logout()}" ajax="false" ></p:commandLink>
                             </h:form>
                             <p:outputLabel value="Please login to continue ... " rendered="#{!staffController.logged}" ></p:outputLabel>
-                       
+
                         </ui:insert>
                     </td>
                 </tr>
